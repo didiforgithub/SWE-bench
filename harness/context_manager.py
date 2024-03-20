@@ -119,6 +119,7 @@ class TestbedContextManager:
         if testbed is not None:
             self.temp_dir_work = None
             self.testbed = os.path.abspath(testbed)
+            print(f"self.testded: {self.testbed}")
         else:
             self.temp_dir_work = TemporaryDirectory(dir=temp_dir)
             self.testbed = self.temp_dir_work.name
@@ -177,8 +178,9 @@ class TestbedContextManager:
         if self.temp_dir_conda is not None:
             # Set up the paths for Miniconda
             self.path_conda = os.path.join(self.path_conda, "miniconda3")
-            os.mkdir(self.path_conda)
+            os.makedirs(self.path_conda)
             miniconda_sh = os.path.join(self.path_conda, "miniconda.sh")
+            # 
             logger_testbed.info(
                 f"No conda path provided, creating temporary install in {self.path_conda}..."
             )
@@ -251,11 +253,12 @@ class TestbedContextManager:
                 logger_testbed.info(f"[Testbed] Setting up testbed for {env_name}")
 
                 # Clone github per repo/version
-                repo_path = os.path.join(self.testbed, env_name)
+                repo_path = os.path.join(self.testbed, "repo")
                 if not os.path.exists(repo_path):
                     clone_repo(repo, repo_path)
                     logger_testbed.info(f"[Testbed] Cloned {repo} to {repo_path}")
                 else:
+                    print(f"[Testbed] Repo for {repo_prefix} version {version} exists: {repo_path}; skipping")
                     logger_testbed.info(
                         f"[Testbed] Repo for {repo_prefix} version {version} exists: {repo_path}; skipping"
                     )
@@ -350,11 +353,15 @@ class TestbedContextManager:
             repo_prefix = repo.replace("/", "__")
             for version, instances in map_version_to_instances.items():
                 env_name = f"{repo_prefix}__{version}"
+                # testbed /Users/mac/Github_project/SWE-bench/Storage/repo/gpt-4-turbo-preview/scikit-learn__scikit-learn
+                # env_nam scikit-learn__1.3
                 task_set = {
                     "conda_path": self.path_conda,
                     "log_dir": self.log_dir,
                     "task_instances": instances,
-                    "testbed": os.path.join(self.testbed, env_name),
+                    # "testbed": os.path.join(self.testbed, env_name),
+                    # TODO 修改
+                    "testbed": os.path.join(self.testbed, "repo", "scikit-learn__scikit-learn"),
                     "timeout": self.timeout,
                     "venv": env_name,
                     "version": version,
@@ -402,6 +409,7 @@ class TaskEnvContextManager:
         is_eval: bool = False,
         log_suffix: str = None,
     ):
+        print(f"TaskenvContextManager testbed: {testbed}")
         """
         Sets up execution context for a single task instance
 
@@ -424,6 +432,8 @@ class TaskEnvContextManager:
         self.testbed = testbed
         self.testbed_name = testbed.split("/")[-1]
         self.venv = venv
+        # TODO 这里使用 testbed 更换 repo
+        self.repo = ""
 
         # Log file naming
         log_file_name = (
@@ -462,6 +472,7 @@ class TaskEnvContextManager:
         """
         Enter task environment, set up log file
         """
+        os.makedirs(self.testbed, exist_ok=True)
         os.chdir(self.testbed)
         with open(self.log_file, "w") as f:
             f.write(
@@ -517,6 +528,7 @@ class TaskEnvContextManager:
         Returns:
             bool: True if installation successful, False otherwise
         """
+        print("进入run_install_task")
         # Get installation instructions by repo/version
         specifications = MAP_VERSION_TO_INSTALL[instance["repo"]][instance["version"]]
 

@@ -102,7 +102,7 @@ def setup_testbed(data: dict):
             print(
                 f"{task_list['testbed']}: {len(task_list['task_instances'])} instances"
             )
-
+   
         if len(distributed_task_list) == 1:
             data_dict.func(distributed_task_list[0])
             return

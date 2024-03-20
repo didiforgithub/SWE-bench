@@ -249,6 +249,7 @@ def clone_repo(repo_name: str, path: str, token: str = None) -> bool:
             + repo_name.replace("/", "__")
             + ".git"
         )
+        print(f"repo_url:{repo_url}")
         Repo.clone_from(repo_url, path)
         return True
     except Exception as e:

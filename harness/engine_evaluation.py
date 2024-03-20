@@ -71,7 +71,6 @@ def overwrite_ablation(tcm: TaskEnvContextManager, task_instance: dict):
     # run testing script
     if not tcm.run_tests_task(task_instance):
         return
-    
     return
 
 
@@ -132,6 +131,7 @@ def main(args):
     Splits predictions into multiple groups if num_workers > 1. Each group is
     then evaluated in parallel.
     """
+    # args Namespace(log_dir='/Users/mac/Github_project/SWE-bench/Storage/log/gpt-4-32k-0613', log_suffix=None, num_workers=1, predictions_path='/Users/mac/Github_project/SWE-bench/Storage/repo/gpt-4-32k-0613/scikit-learn__scikit-learn/1.3/gpt-4-32k-0613_scikit-learn__scikit-learn_1.3_predict.json', skip_existing=False, temp_dir='/Users/mac/Github_project/SWE-bench/Storage/repo/gpt-4-32k-0613/scikit-learn__scikit-learn/1.3', timeout=900, verbose=False, conda_link=None)
     if args.num_workers is None:
         args.num_workers = cpu_count()
 

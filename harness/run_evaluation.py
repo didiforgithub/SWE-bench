@@ -87,7 +87,6 @@ def main(
         raise ValueError("--log_dir must exist and point at a directory")
     if not os.path.exists(testbed) or not os.path.isdir(testbed):
         raise ValueError("--testbed must exist and point at a directory")
-
     if not os.path.exists(swe_bench_tasks) and swe_bench_tasks not in ["dev", "test"]:
         raise ValueError("--swe_bench_tasks does not exist OR is not [dev|test]")
 
@@ -132,14 +131,17 @@ def main(
         map_repo_version_to_predictions = {}
         for p in predictions:
             repo = p[KEY_INSTANCE_ID].rsplit("-", 1)[0]
-            if repo not in map_repo_version_to_predictions:
-                map_repo_version_to_predictions[repo] = {}
-            t = tasks_map[p[KEY_INSTANCE_ID]]
-            p.update(t)
-            version = t["version"]
-            if version not in map_repo_version_to_predictions[repo]:
-                map_repo_version_to_predictions[repo][version] = []
-            map_repo_version_to_predictions[repo][version].append(p)
+            # scikit-learn environment
+            if repo == "scikit-learn__scikit-learn":
+                if repo not in map_repo_version_to_predictions:
+                    map_repo_version_to_predictions[repo] = {}
+                t = tasks_map[p[KEY_INSTANCE_ID]]
+                p.update(t)
+                version = t["version"]
+                if version not in map_repo_version_to_predictions[repo]:
+                    map_repo_version_to_predictions[repo][version] = []
+                map_repo_version_to_predictions[repo][version].append(p)
+        
 
         # For each model/repo/version, create testbed folder and save predictions
         for repo in map_repo_version_to_predictions:
@@ -171,6 +173,8 @@ def main(
                 args.timeout = timeout
                 args.verbose = verbose
                 args.conda_link = conda_link
+                args.testbed = os.path.join(testbed, testbed_model_name, repo)
+                args.path_conda = "/Users/mac/Github_project/SWE-bench/Storage/conda_path/miniconda3"
 
                 # Remove predictions that have already been evaluated
                 repo_version_predictions = map_repo_version_to_predictions[repo][version]
@@ -220,8 +224,9 @@ def main(
             pool.join()
     finally:
         # Clean up
-        for temp_dir in temp_dirs:
-            shutil.rmtree(temp_dir)
+        print("流程结束")
+        # for temp_dir in temp_dirs:
+        #     shutil.rmtree(temp_dir)
 
 
 if __name__ == "__main__":
