@@ -2,7 +2,7 @@ MAP_VERSION_TO_INSTALL_SKLEARN = {
     k: {
         "python": "3.6",
         "packages": "numpy scipy cython pytest pandas matplotlib",
-        "install": "pip install -v --no-use-pep517 --no-build-isolation -e .",
+        "install": "pip install -v --no-use-pep517 --no-build-isolation -e . -i https://pypi.tuna.tsinghua.edu.cn/simple",
     }
     for k in ["0.20", "0.21", "0.22"]
 }
@@ -11,7 +11,7 @@ MAP_VERSION_TO_INSTALL_SKLEARN.update(
         k: {
             "python": "3.7",
             "packages": "numpy scipy cython pytest pandas matplotlib",
-            "install": "pip install -v --no-use-pep517 --no-build-isolation -e .",
+            "install": "pip install -v --no-use-pep517 --no-build-isolation -e . -i https://pypi.tuna.tsinghua.edu.cn/simple some-package",
         }
         for k in ["0.23", "0.24"]
     }
@@ -21,7 +21,7 @@ MAP_VERSION_TO_INSTALL_SKLEARN.update(
         k: {
             "python": "3.9",
             "packages": "numpy scipy cython pytest pandas matplotlib joblib threadpoolctl",
-            "install": "pip install -v --no-use-pep517 --no-build-isolation -e .",
+            "install": "pip install -v --no-use-pep517 --no-build-isolation -e . -i https://pypi.tuna.tsinghua.edu.cn/simple some-package",
         }
         for k in ["1.0", "1.1", "1.2", "1.3", "1.4"]
     }

@@ -223,7 +223,7 @@ class TestbedContextManager:
         conda_bin_path = os.path.join(self.path_conda, "bin")
         shellenv = os.environ.copy()
         shellenv["PATH"] = conda_bin_path + os.pathsep + shellenv["PATH"]
-        self.exec.subprocess_args["env"] = shellenv
+        self.exec.subprocess_args["ensav"] = shellenv
 
         path_activate = os.path.join(self.path_conda, "bin", "activate")
         exec_type = "mamba" if "mamba" in self.path_conda else "conda"
@@ -556,11 +556,14 @@ class TaskEnvContextManager:
                     with open(self.log_file, "a") as f:
                         f.write(f"\n{INSTALL_FAIL}\n")
                     return False
+        # return True
 
         # Skip installation if no instructions provided
         if "install" not in specifications:
             return True
-        cmd_install = f"{self.cmd_activate} && {specifications['install']}"
+        # TODO 检测是否pip过
+        
+        cmd_install = f"bash && {self.cmd_activate} && {specifications['install']}"
         print(f"[{self.testbed_name}] [{instance[KEY_INSTANCE_ID]}] Installing with command: {cmd_install}")
         logger_taskenv.info(
             f"[{self.testbed_name}] [{instance[KEY_INSTANCE_ID]}] Installing with command: {cmd_install}"
@@ -569,8 +572,8 @@ class TaskEnvContextManager:
             # Run installation command
             # source /Users/mac/Github_project/SWE-bench/Storage/conda_path/miniconda3/bin/activate scikit-learn__scikit-learn__0.22 && echo 'activate successful' && pip install -v --no-use-pep517 --no-build-isolation -e .
             # /Users/mac/Github_project/SWE-bench/Storage/conda_path/miniconda3/bin/conda activate scikit-learn__scikit-learn__0.22
-            activate_begin = self.exec(f"{self.cmd_activate}", timeout=self.timeout, shell=True)
-            print(activate_begin.returncode)
+            # activate_begin = self.exec(f"{self.cmd_activate}", timeout=self.timeout, shell=True)
+            # print(activate_begin.returncode)
             # print(f"这里输出activate指令{activate_begin.stout}, {activate_begin.stderr}") # 1
             # print("-----------")
             # pip_begin = self.exec("which pip", timeout=self.timeout, shell=True)
@@ -578,9 +581,9 @@ class TaskEnvContextManager:
             # conda_begin = self.exec("/Users/mac/Github_project/SWE-bench/Storage/conda_path/miniconda3/bin/conda info -e", timeout=self.timeout, shell=True)
             # print(f"conda_position {conda_begin.stdout}")
             # print("-----------")
-            out_install = self.exec(f"{specifications['install']}", timeout=self.timeout, shell=True)
+            # out_install = self.exec(f"{specifications['install']}", timeout=self.timeout, shell=True)
             
-            # out_install = self.exec(cmd_install, timeout=self.timeout, shell=True)
+            out_install = self.exec(cmd_install, timeout=self.timeout, shell=True)
 
             # Write installation logs to log file
             with open(self.log_file, "a") as f:
@@ -590,8 +593,6 @@ class TaskEnvContextManager:
 
             if out_install.returncode != 0:
                 # Installation failed
-                print(out_install.stdout) # 3
-                print(out_install.stderr) # 4
                 logger_taskenv.error(
                     f"[{self.testbed_name}] [{instance[KEY_INSTANCE_ID]}] Installation failed"
                 )
@@ -623,6 +624,8 @@ class TaskEnvContextManager:
                 f.write(f"\n{INSTALL_FAIL}: {e}\n")
             return False
 
+# pip install -v --no-use-pep517 --no-build-isolation -e .
+        
     def apply_patch(
         self, patch: str, patch_type: str = "", revert: bool = False
     ) -> bool:
