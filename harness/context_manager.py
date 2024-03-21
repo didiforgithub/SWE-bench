@@ -253,7 +253,8 @@ class TestbedContextManager:
                 logger_testbed.info(f"[Testbed] Setting up testbed for {env_name}")
 
                 # Clone github per repo/version
-                repo_path = os.path.join(self.testbed, "repo")
+                repo_path = os.path.join(self.testbed, "repo", repo_prefix)
+                print(repo_path)
                 if not os.path.exists(repo_path):
                     clone_repo(repo, repo_path)
                     logger_testbed.info(f"[Testbed] Cloned {repo} to {repo_path}")
@@ -535,6 +536,7 @@ class TaskEnvContextManager:
         # Run pre-install set up if provided
         if "pre_install" in specifications:
             for pre_install in specifications["pre_install"]:
+                print(f"这里 pre {pre_install}")
                 cmd_pre_install = f"{self.cmd_activate} && {pre_install}"
                 logger_taskenv.info(
                     f"[{self.testbed_name}] [{instance[KEY_INSTANCE_ID]}] Running pre-install setup command: {cmd_pre_install}"
@@ -547,6 +549,7 @@ class TaskEnvContextManager:
                     f.write(f"Std. Output: {out_pre_install.stdout}\n")
                     f.write(f"Std. Error: {out_pre_install.stderr}\n")
                 if out_pre_install.returncode != 0:
+                    print(f"[{self.testbed_name}] [{instance[KEY_INSTANCE_ID]}] Pre-install setup failed")
                     logger_taskenv.error(
                         f"[{self.testbed_name}] [{instance[KEY_INSTANCE_ID]}] Pre-install setup failed"
                     )
@@ -557,14 +560,30 @@ class TaskEnvContextManager:
         # Skip installation if no instructions provided
         if "install" not in specifications:
             return True
-
+        print("这里install")
         cmd_install = f"{self.cmd_activate} && {specifications['install']}"
+        print(f"[{self.testbed_name}] [{instance[KEY_INSTANCE_ID]}] Installing with command: {cmd_install}")
         logger_taskenv.info(
             f"[{self.testbed_name}] [{instance[KEY_INSTANCE_ID]}] Installing with command: {cmd_install}"
         )
         try:
             # Run installation command
-            out_install = self.exec(cmd_install, timeout=self.timeout, shell=True)
+            print(f"当前工作文件夹{os.getcwd()}")
+            # source /Users/mac/Github_project/SWE-bench/Storage/conda_path/miniconda3/bin/activate scikit-learn__scikit-learn__0.22 && echo 'activate successful' && pip install -v --no-use-pep517 --no-build-isolation -e .
+            print(f"{self.cmd_activate}")
+            # /Users/mac/Github_project/SWE-bench/Storage/conda_path/miniconda3/bin/conda activate scikit-learn__scikit-learn__0.22
+            activate_begin = self.exec(f"{self.cmd_activate}", timeout=self.timeout, shell=True)
+            print(activate_begin.returncode)
+            # print(f"这里输出activate指令{activate_begin.stout}, {activate_begin.stderr}") # 1
+            print("-----------")
+            pip_begin = self.exec("which pip", timeout=self.timeout, shell=True)
+            print(f"pip_position {pip_begin.stdout}") 
+            conda_begin = self.exec("/Users/mac/Github_project/SWE-bench/Storage/conda_path/miniconda3/bin/conda info -e", timeout=self.timeout, shell=True)
+            print(f"conda_position {conda_begin.stdout}")
+            print("-----------")
+            out_install = self.exec(f"{specifications['install']}", timeout=self.timeout, shell=True)
+            
+            # out_install = self.exec(cmd_install, timeout=self.timeout, shell=True)
 
             # Write installation logs to log file
             with open(self.log_file, "a") as f:
@@ -574,6 +593,8 @@ class TaskEnvContextManager:
 
             if out_install.returncode != 0:
                 # Installation failed
+                print(out_install.stdout) # 3
+                print(out_install.stderr) # 4
                 logger_taskenv.error(
                     f"[{self.testbed_name}] [{instance[KEY_INSTANCE_ID]}] Installation failed"
                 )
