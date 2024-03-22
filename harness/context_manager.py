@@ -1,5 +1,5 @@
-import logging, os, platform, subprocess
-
+import logging, os, platform
+import subprocess
 from constants import (
     APPLY_PATCH_FAIL,
     APPLY_PATCH_PASS,
@@ -223,7 +223,7 @@ class TestbedContextManager:
         conda_bin_path = os.path.join(self.path_conda, "bin")
         shellenv = os.environ.copy()
         shellenv["PATH"] = conda_bin_path + os.pathsep + shellenv["PATH"]
-        self.exec.subprocess_args["ensav"] = shellenv
+        self.exec.subprocess_args["env"] = shellenv
 
         path_activate = os.path.join(self.path_conda, "bin", "activate")
         exec_type = "mamba" if "mamba" in self.path_conda else "conda"
@@ -254,7 +254,6 @@ class TestbedContextManager:
 
                 # Clone github per repo/version
                 repo_path = os.path.join(self.testbed, "repo", repo_prefix)
-                print(repo_path)
                 if not os.path.exists(repo_path):
                     clone_repo(repo, repo_path)
                     logger_testbed.info(f"[Testbed] Cloned {repo} to {repo_path}")
@@ -356,13 +355,13 @@ class TestbedContextManager:
                 env_name = f"{repo_prefix}__{version}"
                 # testbed /Users/mac/Github_project/SWE-bench/Storage/repo/gpt-4-turbo-preview/scikit-learn__scikit-learn
                 # env_nam scikit-learn__1.3
+                prefix = os.path.basename(self.testbed)
                 task_set = {
                     "conda_path": self.path_conda,
                     "log_dir": self.log_dir,
                     "task_instances": instances,
                     # "testbed": os.path.join(self.testbed, env_name),
-                    # TODO 修改
-                    "testbed": os.path.join(self.testbed, "repo", "scikit-learn__scikit-learn"),
+                    "testbed": os.path.join(self.testbed, "repo", prefix),
                     "timeout": self.timeout,
                     "venv": env_name,
                     "version": version,
@@ -562,8 +561,9 @@ class TaskEnvContextManager:
         if "install" not in specifications:
             return True
         # TODO 检测是否pip过
-        
-        cmd_install = f"bash && {self.cmd_activate} && {specifications['install']}"
+        # cmd_install = f"bash && {self.cmd_activate} && {specifications['install']}"
+        cmd_install = f"{self.cmd_activate} && {specifications['install']}"
+        # cmd_install = f"bash && {self.cmd_activate}"
         print(f"[{self.testbed_name}] [{instance[KEY_INSTANCE_ID]}] Installing with command: {cmd_install}")
         logger_taskenv.info(
             f"[{self.testbed_name}] [{instance[KEY_INSTANCE_ID]}] Installing with command: {cmd_install}"
@@ -572,24 +572,45 @@ class TaskEnvContextManager:
             # Run installation command
             # source /Users/mac/Github_project/SWE-bench/Storage/conda_path/miniconda3/bin/activate scikit-learn__scikit-learn__0.22 && echo 'activate successful' && pip install -v --no-use-pep517 --no-build-isolation -e .
             # /Users/mac/Github_project/SWE-bench/Storage/conda_path/miniconda3/bin/conda activate scikit-learn__scikit-learn__0.22
-            # activate_begin = self.exec(f"{self.cmd_activate}", timeout=self.timeout, shell=True)
-            # print(activate_begin.returncode)
+            # activate_begin = self.exec(f"bash && {self.cmd_activate} && which pip", timeout=self.timeout, shell=True)
+            # print(f"returncode: {activate_begin.returncode}")
+            # print(f"output: {activate_begin.stdout}")
             # print(f"这里输出activate指令{activate_begin.stout}, {activate_begin.stderr}") # 1
-            # print("-----------")
+            print("-----conda where------")
+            conda_change = subprocess.Popen(['/bin/bash', '-i', '-c', f"{self.cmd_activate} && /Users/mac/Github_project/SWE-bench/Storage/conda_path/miniconda3/bin/conda info -e"],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+            conda_stdout,conda_stderr = conda_change.communicate()
+            print(conda_stdout)
+            print(conda_change.returncode)
             # pip_begin = self.exec("which pip", timeout=self.timeout, shell=True)
             # print(f"pip_position {pip_begin.stdout}") 
-            # conda_begin = self.exec("/Users/mac/Github_project/SWE-bench/Storage/conda_path/miniconda3/bin/conda info -e", timeout=self.timeout, shell=True)
-            # print(f"conda_position {conda_begin.stdout}")
-            # print("-----------")
+            # conda_where = subprocess.Popen(['/bin/bash', '-i', '-c', "/Users/mac/Github_project/SWE-bench/Storage/conda_path/miniconda3/bin/conda info -e"],
+            #                     stdout=subprocess.PIPE,
+            #                     stderr=subprocess.PIPE)
+            # stdout_data, stderr_data = conda_where.communicate()
+            # # conda_begin = self.exec("/Users/mac/Github_project/SWE-bench/Storage/conda_path/miniconda3/bin/conda info -e", timeout=self.timeout, shell=True)
+            # print(f"conda_position {stdout_data.decode()}")
+            print("-----where------")
             # out_install = self.exec(f"{specifications['install']}", timeout=self.timeout, shell=True)
             
-            out_install = self.exec(cmd_install, timeout=self.timeout, shell=True)
+            out_install = subprocess.Popen(['/bin/bash', '-i', '-c', cmd_install],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+            stdout, stderr = out_install.communicate()
+
+            # Decode and print the output and errors
+            print(stdout.decode())
+            print(stderr.decode())
+            print(f"return code: {out_install.returncode}")
+
+            # out_install = self.exec(cmd_install, timeout=self.timeout, shell=True)
 
             # Write installation logs to log file
             with open(self.log_file, "a") as f:
                 f.write(f"Installation Command: {cmd_install}\n")
-                f.write(f"Std. Output: {out_install.stdout}\n")
-                f.write(f"Std. Error: {out_install.stderr}\n")
+                f.write(f"Std. Output: {stdout.decode()}\n")
+                f.write(f"Std. Error: {stderr.decode()}\n")
 
             if out_install.returncode != 0:
                 # Installation failed
@@ -623,8 +644,6 @@ class TaskEnvContextManager:
             with open(self.log_file, "a") as f:
                 f.write(f"\n{INSTALL_FAIL}: {e}\n")
             return False
-
-# pip install -v --no-use-pep517 --no-build-isolation -e .
         
     def apply_patch(
         self, patch: str, patch_type: str = "", revert: bool = False

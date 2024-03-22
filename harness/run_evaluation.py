@@ -126,20 +126,23 @@ def main(
     # For each model, split predictions by repo + save to folder
     eval_args = []
     temp_dirs = []
+    # version_list = ["3.6", "3.5", "3.4"]
     for model, predictions in map_model_to_predictions.items():
         # Group predictions by repository, version
         map_repo_version_to_predictions = {}
         for p in predictions:
             repo = p[KEY_INSTANCE_ID].rsplit("-", 1)[0]
-            # scikit-learn environment
-            if repo == "scikit-learn__scikit-learn":
+            # matplotlib__matplotlib environment
+            if repo == "matplotlib__matplotlib":
                 if repo not in map_repo_version_to_predictions:
                     map_repo_version_to_predictions[repo] = {}
                 t = tasks_map[p[KEY_INSTANCE_ID]]
                 p.update(t)
                 version = t["version"]
+                # if version in version_list:
                 if version not in map_repo_version_to_predictions[repo]:
                     map_repo_version_to_predictions[repo][version] = []
+                    print(version)
                 map_repo_version_to_predictions[repo][version].append(p)
         
 
