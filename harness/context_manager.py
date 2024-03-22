@@ -715,15 +715,19 @@ class TaskEnvContextManager:
             test_cmd = f"{self.cmd_activate} && {instance['test_cmd']}"
             with open(self.log_file, "a") as f:
                 f.write(f"Test Script: {test_cmd};\n")
-            out_test = self.exec(
-                test_cmd, shell=True, timeout=self.timeout, check=False
-            )
+            out_test = subprocess.Popen(['/bin/bash', '-i', '-c', test_cmd],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE)
+            test_stdout, test_stderr = out_test.communicate()
 
+            # out_test = self.exec(
+            #     test_cmd, shell=True, timeout=self.timeout, check=False
+            # )
             # Write test results to log file
             with open(self.log_file, "a") as f:
                 f.write(f"Output:\n")
-                f.write(out_test.stdout)
-                f.write(out_test.stderr)
+                f.write(test_stdout)
+                f.write(test_stderr)
                 if out_test.returncode != 0:
                     f.write(f"\n{TESTS_FAILED}\n")
                 else:
